@@ -1,0 +1,40 @@
+package ru.sterkhov.onlinepaymentsystem.controller.api;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import ru.sterkhov.onlinepaymentsystem.webhook.WebhookProcessor;
+
+/**
+ * Контроллер для приёма вебхуков от платёжных провайдеров.
+ */
+@RestController
+@RequestMapping("/api/v1/webhooks")
+@RequiredArgsConstructor
+@ToString
+@Slf4j
+@Hidden
+public class WebhookController {
+
+    /** Обработчик вебхуков. */
+    private final WebhookProcessor webhookProcessor;
+
+    /**
+     * Принимает вебхук от Т-Банка.
+     *
+     * @param rawBody тело запроса в виде строки
+     * @return подтверждение приёма
+     */
+    @PostMapping("/tbank")
+    public ResponseEntity<String> handleTBankWebhook(@RequestBody String rawBody) {
+        log.info("T-Bank webhook received");
+        webhookProcessor.process(rawBody);
+        return ResponseEntity.ok("OK");
+    }
+}

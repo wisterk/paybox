@@ -1,0 +1,1 @@
+ALTER TABLE payment ADD COLUMN IF NOT EXISTS redirect_url TEXT;

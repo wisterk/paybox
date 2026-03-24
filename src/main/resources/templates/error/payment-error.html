@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayBox — Ошибка</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<div class="container">
+    <div class="brand">
+        <div class="brand-header">
+            <img th:src="@{/img/logo.png}" alt="" class="brand-logo">
+            <div class="brand-name">Pay<span>Box</span></div>
+        </div>
+    </div>
+
+    <div class="glass-panel error-panel">
+        <div class="error-icon">&#10060;</div>
+        <h1 th:text="${errorTitle}" class="error-title">Ошибка</h1>
+        <p th:text="${errorMessage}" class="error-message">Что-то пошло не так.</p>
+    </div>
+
+    <a href="/" class="link-back">На главную</a>
+</div>
+
+</body>
+</html>

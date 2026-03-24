@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${payment.orderId != null ? 'PayBox — #' + payment.orderId : 'PayBox — Оплата'}">PayBox — Оплата</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<div class="container">
+    <div class="brand">
+        <div class="brand-header">
+            <img th:src="@{/img/logo.png}" alt="" class="brand-logo">
+            <div class="brand-name">Pay<span>Box</span></div>
+        </div>
+        <div class="brand-sub">Выбор способа оплаты</div>
+    </div>
+
+    <div class="glass-panel">
+        <!-- Сумма -->
+        <div class="amount-hero">
+            <div>
+                <span class="amount-value"
+                      th:text="${#numbers.formatDecimal(payment.amount, 1, 2)}">
+                    0
+                </span>
+                <span class="amount-currency"
+                      th:text="${payment.currency}">
+                    RUB
+                </span>
+            </div>
+            <div th:if="${payment.orderId}"
+                 class="amount-method"
+                 th:text="'Заказ #' + ${payment.orderId}">
+            </div>
+        </div>
+
+        <!-- Шаг 1: Выбор метода -->
+        <div id="step1">
+            <div class="step-title">Способ оплаты</div>
+            <div class="step-desc">Выберите удобный способ для проведения платежа</div>
+
+            <div class="method-grid">
+                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).INVOICE)}"
+                     class="method-card theme-yellow"
+                     data-method="INVOICE">
+                    <div class="method-icon icon-yellow">&#9783;</div>
+                    <div class="method-body">
+                        <div class="method-name">Счёт на оплату</div>
+                        <div class="method-info">
+                            PDF-счёт через Т-Банк с QR-кодом. Оплатите в любом банковском приложении.
+                        </div>
+                        <div class="method-tags">
+                            <span class="method-tag tag-green">0% комиссия</span>
+                            <span class="method-tag tag-yellow">Т-Банк</span>
+                            <span class="method-tag">1-2 дня</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).SBP_QR)}"
+                     class="method-card theme-yellow"
+                     data-method="SBP_QR">
+                    <div class="method-icon icon-yellow">&#9881;</div>
+                    <div class="method-body">
+                        <div class="method-name">СБП</div>
+                        <div class="method-info">Мгновенная оплата через Систему Быстрых Платежей.</div>
+                        <div class="method-tags">
+                            <span class="method-tag">0.4-0.7%</span>
+                            <span class="method-tag tag-yellow">Т-Банк</span>
+                            <span class="method-tag tag-green">~15 сек</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).CRYPTO)}"
+                     class="method-card"
+                     data-method="CRYPTO">
+                    <div class="method-icon">&#9670;</div>
+                    <div class="method-body">
+                        <div class="method-name">Криптовалюта</div>
+                        <div class="method-info">Прямой перевод на кошелёк. Автоматическое отслеживание.</div>
+                        <div class="method-tags">
+                            <span class="method-tag tag-green">0% комиссия</span>
+                            <span class="method-tag">Блокчейн</span>
+                            <span class="method-tag">1-5 мин</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Донат-сервисы -->
+                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).DONATION_ALERTS)}"
+                     class="method-card"
+                     data-method="DONATION_ALERTS">
+                    <div class="method-icon donation-alerts-icon">&#9733;</div>
+                    <div class="method-body">
+                        <div class="method-name">DonationAlerts</div>
+                        <div class="method-info">
+                            Оплата через платформу DonationAlerts. Укажите код в сообщении.
+                        </div>
+                        <div class="method-tags">
+                            <span class="method-tag">Донат-сервис</span>
+                            <span class="method-tag tag-green">Авто-трекинг</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).DONATE_PAY)}"
+                     class="method-card"
+                     data-method="DONATE_PAY">
+                    <div class="method-icon donate-pay-icon">&#9733;</div>
+                    <div class="method-body">
+                        <div class="method-name">DonatePay</div>
+                        <div class="method-info">
+                            Оплата через DonatePay. Код платежа подставится автоматически.
+                        </div>
+                        <div class="method-tags">
+                            <span class="method-tag">Донат-сервис</span>
+                            <span class="method-tag tag-green">Авто-трекинг</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Шаг 2: Выбор крипто-сети -->
+        <div id="step2" class="hidden">
+            <div class="step-title">Выберите сеть</div>
+            <div id="cryptoDesc" class="step-desc">Курс будет зафиксирован при подтверждении</div>
+
+            <div id="networkGrid" class="method-grid">
+                <div th:each="net : ${cryptoNetworks}"
+                     class="method-card"
+                     th:data-network="${net.key}">
+                    <div class="method-icon crypto-net-icon"
+                         th:data-net="${net.key}">
+                    </div>
+                    <div class="method-body">
+                        <div class="method-name"
+                             th:text="${net.value}">
+                            Network
+                        </div>
+                        <div class="method-info crypto-rate-info"
+                             th:data-network="${net.key}">
+                            Загрузка курса...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn btn-outline back-btn"
+                    onclick="backToStep1()">
+                Назад
+            </button>
+        </div>
+
+        <!-- Шаг 3: Данные для счёта -->
+        <div id="step3" class="hidden">
+            <div id="step3Title" class="step-title">Детали</div>
+
+            <div id="invoiceForm">
+                <div class="form-group">
+                    <label for="payerName">Наименование плательщика</label>
+                    <input type="text"
+                           id="payerName"
+                           placeholder="ИП Иванов Иван Иванович"
+                           autocomplete="off">
+                    <div id="payerSuggestions" class="suggestions-list hidden"></div>
+                </div>
+                <div class="form-group">
+                    <label for="payerInn">ИНН</label>
+                    <input type="text"
+                           id="payerInn"
+                           placeholder="1234567890"
+                           pattern="\d{10,12}"
+                           maxlength="12"
+                           autocomplete="off">
+                    <div id="innSuggestions" class="suggestions-list hidden"></div>
+                </div>
+                <div class="form-group">
+                    <label for="contactEmail">Email для счёта</label>
+                    <input type="email"
+                           id="contactEmail"
+                           placeholder="client@example.com">
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button type="button"
+                        class="btn btn-outline"
+                        onclick="backToStep1()">
+                    Назад
+                </button>
+                <button id="confirmBtn"
+                        type="button"
+                        class="btn btn-yellow"
+                        onclick="confirmPayment()">
+                    Подтвердить
+                </button>
+            </div>
+        </div>
+
+        <div id="error" class="error hidden error-bottom"></div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const paymentId = [[${payment.id}]];
+    const paymentAmount = [[${payment.amount}]];
+    const paymentCurrency = [[${payment.currency}]];
+    const rates = [[${rates}]];
+</script>
+<script th:src="@{/js/choose-method.js}"></script>
+<script th:src="@{/js/party-suggest.js}"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+services:
+  paybox:
+    build: ./paybox
+    container_name: paybox
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # ─── Core ───────────────────────────────────────────────────
+      SERVER_PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: paybox
+      DB_USER: paybox
+      DB_PASSWORD: CHANGE_ME
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # ─── Application ───────────────────────────────────────────
+      APP_BASE_URL: https://pay.example.com # Публичный URL системы (для генерации ссылок)
+      APP_SANDBOX_ENABLED: true             # API-песочница на главной (true/false)
+      PAYMENT_API_KEY: ""                   # Ключ для X-API-Key заголовка мерчанта
+      PAYMENT_TTL_MINUTES: 30               # Время жизни платежа до выбора метода
+      PAYMENT_POLLING_INTERVAL: 15000       # Интервал polling статусов (мс)
+      PAYMENT_CLEANUP_DAYS: 7               # Удалять истекшие платежи старше N дней
+
+      # ─── Т-Банк (Invoice / СБП) ────────────────────────────────
+      # Bearer-токен: T-Business → Интеграции → T-API → Выпустить токен
+      TBANK_ENABLED: false
+      TBANK_BEARER_TOKEN: ""                # t.xxxxx
+      TBANK_ACCOUNT_NUMBER: ""              # Расчётный счёт ИП (20 цифр)
+      TBANK_INVOICE_ENABLED: false        # Выставление счетов на оплату
+      TBANK_SBP_ENABLED: false            # СБП QR-коды (нужна регистрация мерчанта в НСПК)
+
+      # ─── Криптовалюта ──────────────────────────────────────────
+      # Укажите адреса кошельков. Каждая сеть включается отдельно.
+      CRYPTO_ENABLED: false
+      CRYPTO_PAYMENT_TTL: 60              # Время жизни крипто-платежа (минуты)
+      # BTC
+      CRYPTO_BTC_ENABLED: false
+      CRYPTO_BTC_ADDRESS: ""                # bc1q...
+      # ETH
+      CRYPTO_ETH_ENABLED: false
+      CRYPTO_ETH_ADDRESS: ""                # 0x...
+      # SOL
+      CRYPTO_SOL_ENABLED: false
+      CRYPTO_SOL_ADDRESS: ""                # Base58 адрес Solana
+      # TON
+      CRYPTO_TON_ENABLED: false
+      CRYPTO_TON_ADDRESS: ""                # UQ... / EQ...
+      # USDT (TON)
+      CRYPTO_USDT_TON_ENABLED: false
+      CRYPTO_USDT_TON_ADDRESS: ""           # UQ... / EQ...
+      # USDT (TRC-20)
+      CRYPTO_USDT_TRC20_ENABLED: false
+      CRYPTO_USDT_TRC20_ADDRESS: ""         # T...
+      # XAUT — Tether Gold (ERC-20)
+      CRYPTO_XAUT_ENABLED: false
+      CRYPTO_XAUT_ADDRESS: ""               # 0x...
+
+      # ─── DonationAlerts ────────────────────────────────────────
+      # 1. Создайте приложение: donationalerts.com/application/clients
+      # 2. Redirect URI: {APP_BASE_URL}/oauth/donationalerts/callback
+      # 3. При первом запуске перейдите по ссылке из логов для OAuth
+      DA_ENABLED: false
+      DA_CLIENT_ID: ""                      # ID приложения
+      DA_CLIENT_SECRET: ""                  # Ключ API приложения
+      DA_REFRESH_TOKEN: ""                  # Заполнится автоматически после OAuth
+      DA_PAGE_NAME: ""                      # Имя аккаунта (для ссылки на донат)
+
+      # ─── DonatePay ─────────────────────────────────────────────
+      # API-ключ: donatepay.ru/page/api
+      DP_ENABLED: false
+      DP_API_KEY: ""
+      DP_PAGE_NAME: ""                      # Имя аккаунта
+
+      # ─── DaData (автоподстановка ИНН/компаний) ─────────────────
+      # Бесплатно 10 000 запросов/день. Регистрация: dadata.ru
+      DADATA_API_KEY: ""
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: paybox-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paybox
+      POSTGRES_USER: paybox
+      POSTGRES_PASSWORD: CHANGE_ME          # Должен совпадать с DB_PASSWORD выше
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paybox"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: paybox-redis
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

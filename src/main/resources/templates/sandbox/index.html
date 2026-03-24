@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayBox — API Sandbox</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .sandbox-layout {
+            display: flex;
+            position: relative;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .sandbox-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .sandbox-card {
+            position: relative;
+            padding: 24px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        .sandbox-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 10%;
+            left: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+        }
+
+        .sandbox-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .sandbox-card h2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .sandbox-card h2 .card-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            font-size: 0.65rem;
+            flex-shrink: 0;
+        }
+
+        .sandbox-card p {
+            margin-bottom: 14px;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            padding: 14px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            line-height: 1.7;
+            white-space: pre;
+        }
+
+        .code-block .kw { color: var(--accent); }
+        .code-block .str { color: var(--success); }
+
+        .json-key { color: #7c5cfc; }
+        .json-string { color: #34d399; }
+        .json-number { color: #fbbf24; }
+        .json-bool { color: #60a5fa; }
+        .json-null { color: #6b7280; font-style: italic; }
+        .json-error { color: var(--error); }
+
+        .response-box {
+            display: none;
+            max-height: 320px;
+            margin-top: 12px;
+            padding: 14px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            white-space: pre-wrap;
+        }
+
+        .endpoint-badge {
+            display: inline-block;
+            margin-right: 6px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .endpoint-badge.post {
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--success);
+        }
+
+        .endpoint-badge.get {
+            background: rgba(124, 92, 252, 0.1);
+            color: var(--accent);
+        }
+
+        .endpoint-path {
+            color: var(--text);
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+
+        .endpoint-desc {
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .endpoints-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .endpoint-item {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+        }
+
+        .sandbox-footer {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .sandbox-footer a {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .sandbox-footer a:hover {
+            color: var(--accent);
+        }
+
+        @media (max-width: 768px) {
+            .sandbox-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<div class="sandbox-layout">
+    <div class="brand sandbox-brand">
+        <div class="brand-header">
+            <img th:src="@{/img/logo.png}" alt="" class="brand-logo">
+            <div class="brand-name">Pay<span>Box</span></div>
+        </div>
+        <div class="brand-sub">API Sandbox</div>
+    </div>
+
+    <div class="sandbox-grid">
+        <!-- Карточка 1: Создание платежа -->
+        <div class="sandbox-card">
+            <h2>
+                <span class="card-icon create-icon">+</span>
+                Создать платёж
+            </h2>
+            <p>Платёж создаётся без метода — пользователь выберет способ оплаты.</p>
+
+            <div class="form-group">
+                <label for="testAmount">Сумма (RUB)</label>
+                <input type="number"
+                       id="testAmount"
+                       value="100"
+                       step="0.01"
+                       min="0.01">
+            </div>
+            <div class="form-group">
+                <label for="testDesc">Описание</label>
+                <input type="text"
+                       id="testDesc"
+                       value="Тестовый платёж"
+                       placeholder="Описание">
+            </div>
+            <div class="form-group">
+                <label for="testOrder">Номер заказа</label>
+                <input type="text"
+                       id="testOrder"
+                       value="TEST-001"
+                       placeholder="Номер заказа">
+            </div>
+            <div class="form-group">
+                <label for="testRedirect">Redirect URL</label>
+                <input type="text"
+                       id="testRedirect"
+                       placeholder="https://example.com?order={payment_id}">
+            </div>
+            <p class="placeholder-hint">
+                Плейсхолдеры:
+                <code class="placeholder-code">{payment_id}</code>
+                <code class="placeholder-code">{order_id}</code>
+                <code class="placeholder-code">{status}</code>
+                <code class="placeholder-code">{amount}</code>
+                <code class="placeholder-code">{currency}</code>
+            </p>
+
+            <button id="createBtn"
+                    class="btn"
+                    onclick="createTestPayment()">
+                Создать платёж
+            </button>
+
+            <div id="responseBox" class="response-box"></div>
+            <a id="payLink"
+               href="#"
+               class="btn btn-outline pay-link-btn"
+               target="_blank">
+                Открыть страницу оплаты
+            </a>
+        </div>
+
+        <!-- Карточка 2: API Endpoints -->
+        <div class="sandbox-card">
+            <h2>
+                <span class="card-icon endpoints-icon">/</span>
+                API Endpoints
+            </h2>
+            <div class="endpoints-list">
+                <div class="endpoint-item">
+                    <span class="endpoint-badge post">POST</span>
+                    <span class="endpoint-path">/api/v1/payments</span>
+                    <div class="endpoint-desc">Создать платёж. Вернёт paymentUrl для редиректа.</div>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-badge get">GET</span>
+                    <span class="endpoint-path">/api/v1/payments/{id}</span>
+                    <div class="endpoint-desc">Информация о платеже по ID.</div>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-badge get">GET</span>
+                    <span class="endpoint-path">/api/v1/payments/by-order/{orderId}</span>
+                    <div class="endpoint-desc">Список платежей по номеру заказа.</div>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-badge post">POST</span>
+                    <span class="endpoint-path">/api/v1/payments/{id}/refresh</span>
+                    <div class="endpoint-desc">Обновить статус от провайдера.</div>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-badge get">GET</span>
+                    <span class="endpoint-path">/api/v1/payments/methods</span>
+                    <div class="endpoint-desc">Доступные методы оплаты.</div>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-badge get">GET</span>
+                    <span class="endpoint-path">/api/v1/rates</span>
+                    <div class="endpoint-desc">Курсы криптовалют к RUB.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка 3: curl-пример (на всю ширину) -->
+        <div class="sandbox-card full-width">
+            <h2>
+                <span class="card-icon curl-icon">$</span>
+                curl
+            </h2>
+            <div class="code-block"><span class="kw">curl</span> -X POST <span th:text="${baseUrl}"></span>/api/v1/payments \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -H <span class="str">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="str">'{"amount": 500, "currency": "RUB", "orderId": "ORDER-123", "description": "Payment for services"}'</span></div>
+            <p class="curl-note">
+                Ответ содержит <code class="placeholder-code">paymentUrl</code>
+                — перенаправьте пользователя по этой ссылке.
+            </p>
+        </div>
+    </div>
+
+    <div class="sandbox-footer">
+        <a href="/swagger-ui.html" target="_blank">Swagger UI</a>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const apiKey = [[${@appProperties.sandbox.enabled ? @environment.getProperty('payment.api-key') : ''}]];
+</script>
+<script th:src="@{/js/sandbox.js}"></script>
+</body>
+</html>

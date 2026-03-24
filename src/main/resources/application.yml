@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: PayBox
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mydatabase}
+    username: ${DB_USER:myuser}
+    password: ${DB_PASSWORD:secret}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+payment:
+  api-key: ${PAYMENT_API_KEY:123qwe}
+  payment-ttl-minutes: ${PAYMENT_TTL_MINUTES:30}
+  polling:
+    interval: ${PAYMENT_POLLING_INTERVAL:10000}
+  cleanup:
+    after-days: ${PAYMENT_CLEANUP_DAYS:7}
+    cron: ${PAYMENT_CLEANUP_CRON:0 0 3 * * *}
+  providers:
+    tbank:
+      enabled: ${TBANK_ENABLED:true}
+      bearer-token: ${TBANK_BEARER_TOKEN:}
+      base-url: ${TBANK_BASE_URL:https://business.tbank.ru/openapi/api}
+      account-number: ${TBANK_ACCOUNT_NUMBER:}
+      webhook-secret: ${TBANK_WEBHOOK_SECRET:}
+      connect-timeout: ${TBANK_CONNECT_TIMEOUT:5000}
+      read-timeout: ${TBANK_READ_TIMEOUT:10000}
+      invoice:
+        enabled: ${TBANK_INVOICE_ENABLED:true}
+      sbp:
+        enabled: ${TBANK_SBP_ENABLED:false}
+    crypto:
+      enabled: ${CRYPTO_ENABLED:true}
+      payment-ttl-minutes: ${CRYPTO_PAYMENT_TTL:60}
+      networks:
+        btc:
+          enabled: ${CRYPTO_BTC_ENABLED:false}
+          address: ${CRYPTO_BTC_ADDRESS:}
+          confirmations: ${CRYPTO_BTC_CONFIRMATIONS:1}
+        eth:
+          enabled: ${CRYPTO_ETH_ENABLED:false}
+          address: ${CRYPTO_ETH_ADDRESS:}
+          confirmations: ${CRYPTO_ETH_CONFIRMATIONS:3}
+        sol:
+          enabled: ${CRYPTO_ETH_ENABLED:false}
+          address: ${CRYPTO_ETH_ADDRESS:}
+          confirmations: ${CRYPTO_ETH_CONFIRMATIONS:3}
+        ton:
+          enabled: ${CRYPTO_TON_ENABLED:false}
+          address: ${CRYPTO_TON_ADDRESS:}
+          confirmations: ${CRYPTO_TON_CONFIRMATIONS:1}
+        usdt-ton:
+          enabled: ${CRYPTO_USDT_TON_ENABLED:false}
+          address: ${CRYPTO_USDT_TON_ADDRESS:}
+          confirmations: ${CRYPTO_USDT_TON_CONFIRMATIONS:1}
+          contract: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+        usdt-trc20:
+          enabled: ${CRYPTO_USDT_TRC20_ENABLED:false}
+          address: ${CRYPTO_USDT_TRC20_ADDRESS:}
+          confirmations: ${CRYPTO_USDT_TRC20_CONFIRMATIONS:1}
+          contract: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+        xaut:
+          enabled: ${CRYPTO_XAUT_ENABLED:false}
+          address: ${CRYPTO_XAUT_ADDRESS:}
+          confirmations: ${CRYPTO_XAUT_CONFIRMATIONS:3}
+          contract: "0x68749665FF8D2d112Fa859AA293F07A622782F38"
+    donation:
+      donation-alerts:
+        # Callback Redirect URL: http://192.168.1.95:8080/oauth/donationalerts/callback
+        # Connect DonationAlerts Account: http://192.168.1.95:8080/oauth/donationalerts/connect
+        enabled: ${DA_ENABLED:false}
+        client-id: ${DA_CLIENT_ID:}
+        client-secret: ${DA_CLIENT_SECRET:}
+        refresh-token: ${DA_REFRESH_TOKEN:}
+        page-name: ${DA_PAGE_NAME:}
+      donate-pay:
+        enabled: ${DP_ENABLED:false}
+        api-key: ${DP_API_KEY:}
+        page-name: ${DP_PAGE_NAME:}
+
+dadata:
+  api-key: ${DADATA_API_KEY:f7ead6ba94d35e0154ace312fcbf449c457a553e}
+
+app:
+  base-url: ${APP_BASE_URL:http://192.168.1.95:8080}
+  sandbox:
+    enabled: ${APP_SANDBOX_ENABLED:true}
+
+server:
+  port: ${SERVER_PORT:8080}

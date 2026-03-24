@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${payment.orderId != null ? 'PayBox — #' + payment.orderId : 'PayBox — Платёж'}">PayBox</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+
+<div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<div class="container">
+    <div class="brand">
+        <div class="brand-header">
+            <img th:src="@{/img/logo.png}" alt="" class="brand-logo">
+            <div class="brand-name">Pay<span>Box</span></div>
+        </div>
+        <div class="brand-sub"
+             th:text="${payment.method.name() == 'CRYPTO' && payment.metadata != null
+                 ? payment.metadata.get('networkDisplay')
+                 : (payment.method.name() == 'INVOICE'
+                     ? 'Счёт на оплату · Т-Банк'
+                     : (payment.method.name() == 'SBP_QR'
+                         ? 'СБП · Т-Банк'
+                         : 'Payment'))}">
+        </div>
+    </div>
+
+    <div class="glass-panel"
+         th:classappend="${payment.method.name() == 'INVOICE' or payment.method.name() == 'SBP_QR' ? ' card-tbank' : ''} + ${payment.method.name() == 'CRYPTO' ? ' card-crypto' : ''}">
+
+        <!-- Заголовок: заказ + статус -->
+        <div class="status-header">
+            <div>
+                <div th:if="${payment.orderId}"
+                     class="status-header-title"
+                     th:text="'Заказ #' + ${payment.orderId}">
+                </div>
+                <div th:if="${payment.orderId == null}" class="status-header-title">
+                    Платёж
+                </div>
+                <div class="status-header-amount"
+                     th:text="${payment.method.name() == 'CRYPTO'
+                         ? #numbers.formatDecimal(payment.amount, 1, 6) + ' ' + payment.currency
+                         : #numbers.formatDecimal(payment.amount, 1, 2) + ' ' + payment.currency}">
+                </div>
+            </div>
+            <span id="status"
+                  class="status-badge"
+                  th:classappend="${payment.status.name()}"
+                  th:text="${payment.status}">
+                --
+            </span>
+        </div>
+
+        <!-- Крипто: состояние PAID -->
+        <div th:if="${payment.method.name() == 'CRYPTO' and payment.status.name() == 'PAID' and payment.metadata != null}"
+             class="status-section">
+            <div class="status-message status-message-success">
+                Оплата получена и подтверждена в блокчейне.
+            </div>
+        </div>
+
+        <!-- Крипто/Донат: EXPIRED/FAILED/CANCELLED -->
+        <div th:if="${payment.status.terminal and payment.status.name() != 'PAID' and payment.method.name() != 'INVOICE'}"
+             class="status-section">
+            <div class="status-message status-message-error"
+                 th:text="${payment.status.name() == 'EXPIRED'
+                     ? 'Время ожидания оплаты истекло, воспроизвести оплату невозможно.'
+                     : 'Ожидание платежа было отменёно.'}">
+            </div>
+        </div>
+
+        <!-- Крипто: состояние ожидания -->
+        <div th:if="${payment.method.name() == 'CRYPTO' and !payment.status.terminal and payment.metadata != null}"
+             class="status-section crypto-pending">
+            <div id="qrLoader" class="qr-loader">
+                <div class="qr-spinner"></div>
+            </div>
+            <div id="cryptoQr" class="crypto-pay-qr"></div>
+
+            <div class="crypto-send-label">
+                <span class="crypto-pay-label">Отправьте ровно</span>
+            </div>
+            <div class="crypto-pay-value"
+                 th:text="${payment.metadata.get('cryptoAmount')} + ' ' + ${payment.currency}">
+            </div>
+
+            <div class="crypto-pay-addr-row crypto-addr-margin">
+                <code id="cryptoAddress"
+                      class="crypto-pay-addr"
+                      th:text="${payment.metadata.get('address')}">
+                </code>
+                <button class="crypto-pay-copy"
+                        type="button"
+                        onclick="copyAddress()"
+                        title="Копировать адрес">
+                    &#x2398;
+                </button>
+            </div>
+
+            <p class="crypto-pay-hint">
+                Отсканируйте QR или скопируйте адрес. Оплата отслеживается автоматически.
+            </p>
+        </div>
+
+        <!-- СБП QR -->
+        <div th:if="${payment.method.name() == 'SBP_QR' and payment.metadata != null and payment.metadata.containsKey('qrData')}"
+             class="status-section sbp-qr-section">
+            <div id="qrCode"></div>
+            <br>
+            <a th:if="${payment.paymentUrl}"
+               th:href="${payment.paymentUrl}"
+               class="btn btn-yellow sbp-open-btn"
+               target="_blank">
+                Открыть в приложении банка
+            </a>
+        </div>
+
+        <!-- Донат-сервисы (DA, DP, BMC) -->
+        <div th:if="${(payment.method.name() == 'DONATION_ALERTS' or payment.method.name() == 'DONATE_PAY') and !payment.status.terminal}"
+             class="status-section">
+
+            <!-- Пошаговая инструкция -->
+            <div class="donate-instructions">
+                <div class="donate-steps">
+                    <!-- Шаг 1: Скопируйте код (только для DA/DP) -->
+                    <div th:if="${payment.externalId != null and payment.externalId.startsWith('PB-')}"
+                         class="donate-step">
+                        <div class="donate-step-num">1</div>
+                        <div class="donate-step-body">
+                            <div class="donate-step-title">Скопируйте код платежа</div>
+                            <div class="crypto-pay-addr-row donate-ref-row">
+                                <code id="refCode"
+                                      class="crypto-pay-addr donate-ref-code"
+                                      th:text="${payment.externalId}">
+                                </code>
+                                <button class="crypto-pay-copy"
+                                        type="button"
+                                        onclick="copyRefCode()"
+                                        title="Копировать">
+                                    &#x2398;
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 2: Перейдите на сервис -->
+                    <div class="donate-step">
+                        <div class="donate-step-num"
+                             th:text="${payment.externalId != null and payment.externalId.startsWith('PB-') ? '2' : '1'}">
+                        </div>
+                        <div class="donate-step-body">
+                            <div class="donate-step-title">Перейдите на страницу оплаты</div>
+                            <div class="donate-step-desc">
+                                Укажите сумму
+                                <strong th:text="${#numbers.formatDecimal(payment.amount, 1, 2)} + ' ' + ${payment.currency}"></strong>
+                                <span th:if="${payment.externalId != null and payment.externalId.startsWith('PB-')}">
+                                    и вставьте код в поле сообщения
+                                </span>
+                            </div>
+                            <a th:if="${payment.paymentUrl}"
+                               th:href="${payment.paymentUrl}"
+                               class="btn donate-open-btn"
+                               target="_blank">
+                                Открыть
+                                <span th:text="${payment.metadata != null ? payment.metadata.get('serviceName') : 'сервис'}"></span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 3: Ожидание -->
+                    <div class="donate-step">
+                        <div class="donate-step-num"
+                             th:text="${payment.externalId != null and payment.externalId.startsWith('PB-') ? '3' : '2'}">
+                        </div>
+                        <div class="donate-step-body">
+                            <div class="donate-step-title">Вернитесь сюда</div>
+                            <div class="donate-step-desc">
+                                Статус обновится автоматически после обработки платежа
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Донат-сервисы: состояние PAID -->
+        <div th:if="${(payment.method.name() == 'DONATION_ALERTS' or payment.method.name() == 'DONATE_PAY') and payment.status.name() == 'PAID'}"
+             class="status-section">
+            <div class="status-message status-message-success"
+                 th:text="${'Оплата через ' + (payment.metadata != null ? payment.metadata.get('serviceName') : 'сервис') + ' получена.'}">
+            </div>
+        </div>
+
+        <!-- Счёт -->
+        <div th:if="${payment.method.name() == 'INVOICE'}" class="invoice-status-section">
+            <div class="invoice-notice">
+                Счёт выставлен через Т-Банк и отправлен получателю.
+            </div>
+            <div th:if="${payment.metadata != null}" class="payment-info invoice-info">
+                <div th:if="${payment.metadata.containsKey('payerName')}" class="info-row">
+                    <span class="label">Плательщик</span>
+                    <span class="value value-truncate-left"
+                          th:text="${payment.metadata.get('payerName')}">
+                        --
+                    </span>
+                </div>
+                <div th:if="${payment.metadata.containsKey('payerInn')}" class="info-row">
+                    <span class="label">ИНН</span>
+                    <span class="value"
+                          th:text="${payment.metadata.get('payerInn')}">
+                        --
+                    </span>
+                </div>
+                <div th:if="${payment.metadata.containsKey('contactEmail')}" class="info-row">
+                    <span class="label">Email</span>
+                    <span class="value"
+                          th:text="${payment.metadata.get('contactEmail')}">
+                        --
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Детали -->
+        <div class="payment-info details-section">
+            <div th:if="${payment.metadata != null and payment.metadata.containsKey('exchangeRate')}"
+                 class="info-row">
+                <span class="label">Курс</span>
+                <span class="value"
+                      th:text="'1 ' + ${payment.currency} + ' = ' + ${payment.metadata.get('exchangeRate')} + ' RUB'">
+                    --
+                </span>
+            </div>
+            <div th:if="${payment.paidAt}" class="info-row">
+                <span class="label">Оплачен</span>
+                <span class="value"
+                      data-timestamp
+                      th:data-iso="${payment.paidAt}">
+                    --
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">ID</span>
+                <span id="paymentId"
+                      class="value value-mono"
+                      th:text="${payment.id}">
+                    --
+                </span>
+            </div>
+        </div>
+
+        <!-- Кнопка "Поделиться" (Счёт — всегда видна) -->
+        <div th:if="${payment.method.name() == 'INVOICE'}" class="action-section">
+            <button id="shareBtn"
+                    class="btn btn-outline share-btn"
+                    type="button"
+                    onclick="sharePayment()">
+                <span class="share-icon">&#8599;</span> Поделиться ссылкой на оплату
+            </button>
+        </div>
+
+        <!-- Возврат в магазин (только при PAID + redirectUrl) -->
+        <div th:if="${payment.status.name() == 'PAID' and resolvedRedirectUrl != null}"
+             class="action-section">
+            <a th:href="${resolvedRedirectUrl}"
+               class="btn return-btn">
+                Вернуться в магазин
+            </a>
+        </div>
+
+        <!-- Сменить способ оплаты (не для счёта/крипто) -->
+        <div th:if="${!payment.status.terminal and payment.method.name() != 'INVOICE' and payment.method.name() != 'CRYPTO'}"
+             class="action-section">
+            <button class="btn btn-outline change-method-btn"
+                    type="button"
+                    onclick="changeMethod()">
+                Сменить способ оплаты
+            </button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const paymentId = [[${payment.id}]];
+    const isTerminal = [[${payment.status.terminal}]];
+    const qrData = [[${payment.metadata != null && payment.metadata.containsKey('qrData') ? payment.metadata.get('qrData') : ''}]];
+    const cryptoAddress = [[${payment.metadata != null && payment.metadata.containsKey('address') ? payment.metadata.get('address') : ''}]];
+    const cryptoAmount = [[${payment.metadata != null && payment.metadata.containsKey('cryptoAmount') ? payment.metadata.get('cryptoAmount') : ''}]];
+    const cryptoNetwork = [[${payment.metadata != null && payment.metadata.containsKey('network') ? payment.metadata.get('network') : ''}]];
+    const isCrypto = [[${payment.method.name() == 'CRYPTO'}]];
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script th:src="@{/js/payment-status.js}"></script>
+</body>
+</html>

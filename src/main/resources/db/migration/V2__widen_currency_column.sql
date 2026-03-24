@@ -1,0 +1,1 @@
+ALTER TABLE payment ALTER COLUMN currency TYPE VARCHAR(10);
