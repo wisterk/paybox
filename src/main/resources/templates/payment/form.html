@@ -35,7 +35,7 @@
 
             <div class="method-grid">
                 <!-- Invoice -->
-                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).INVOICE)}"
+                <div th:if="${methods.contains(T(me.wisterk.paybox.domain.enums.PaymentMethod).INVOICE)}"
                      class="method-card theme-yellow" data-method="INVOICE">
                     <div class="method-icon icon-yellow">&#9783;</div>
                     <div class="method-body">
@@ -52,7 +52,7 @@
                 </div>
 
                 <!-- SBP -->
-                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).SBP_QR)}"
+                <div th:if="${methods.contains(T(me.wisterk.paybox.domain.enums.PaymentMethod).SBP_QR)}"
                      class="method-card theme-yellow" data-method="SBP_QR">
                     <div class="method-icon icon-yellow">&#9881;</div>
                     <div class="method-body">
@@ -69,7 +69,7 @@
                 </div>
 
                 <!-- Crypto -->
-                <div th:if="${methods.contains(T(ru.sterkhov.onlinepaymentsystem.domain.enums.PaymentMethod).CRYPTO)}"
+                <div th:if="${methods.contains(T(me.wisterk.paybox.domain.enums.PaymentMethod).CRYPTO)}"
                      class="method-card" data-method="CRYPTO">
                     <div class="method-icon">&#9670;</div>
                     <div class="method-body">

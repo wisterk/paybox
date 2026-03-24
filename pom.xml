@@ -8,11 +8,11 @@
         <version>4.0.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>ru.sterkhov</groupId>
+    <groupId>me.wisterk</groupId>
     <artifactId>paybox</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>online-payment-system</name>
-    <description>online-payment-system</description>
+    <name>wisterk-payment</name>
+    <description>wisterk-payment</description>
     <url/>
     <licenses>
         <license/>

@@ -472,7 +472,7 @@ Generates a unique reference code (e.g., `PB-A1B2C3D4`). The user is instructed 
 ## Project Structure
 
 ```
-src/main/java/ru/sterkhov/onlinepaymentsystem/
+src/main/java/me/wisterk/paybox/
   PayBoxApplication.java              # Entry point
   config/                              # Spring configuration
     AppProperties.java                 # Typed config properties
